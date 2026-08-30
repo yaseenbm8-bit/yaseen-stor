@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>متجر ياسين</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f6f7f9;color:#18202a}
+header{background:#111827;color:#fff;padding:18px 16px;position:sticky;top:0;z-index:5}
+.wrap{max-width:1050px;margin:auto}.top{display:flex;align-items:center;justify-content:space-between;gap:12px}.logo{font-size:24px;font-weight:800}
+.cart{border:0;background:#fff;color:#111827;padding:10px 14px;border-radius:12px;font-weight:700;cursor:pointer}
+.hero{padding:35px 18px;background:#e8eefc}.hero h1{margin:0 0 8px;font-size:34px}.hero p{margin:0;color:#4b5563}
+.controls{display:flex;gap:10px;margin:20px 0;flex-wrap:wrap}.search{flex:1;min-width:220px;padding:13px;border:1px solid #d1d5db;border-radius:12px}
+button,.cat{cursor:pointer}.cats{display:flex;gap:8px;flex-wrap:wrap}.cat{border:1px solid #d1d5db;background:#fff;padding:10px 14px;border-radius:999px}.cat.active{background:#111827;color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;padding-bottom:35px}
+.card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 3px 14px #0000000d}.pic{height:170px;background:#e5e7eb;display:grid;place-items:center;font-size:55px}.info{padding:14px}.name{font-weight:800;font-size:18px}.price{font-weight:800;margin:8px 0;color:#0f766e}.add{width:100%;border:0;background:#111827;color:#fff;padding:11px;border-radius:10px;font-weight:700}
+.modal{position:fixed;inset:0;background:#0008;display:none;align-items:flex-end;justify-content:center;z-index:10}.modal.show{display:flex}.box{background:#fff;width:min(650px,100%);max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;padding:20px}.close{float:left;border:0;background:#eee;border-radius:8px;padding:7px 10px}.row{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #eee;padding:12px 0}.qty button{border:0;padding:5px 9px;margin:0 3px;border-radius:6px}.total{font-size:20px;font-weight:800;margin:16px 0}.field{width:100%;padding:12px;border:1px solid #d1d5db;border-radius:10px;margin:7px 0}.wa{display:block;text-align:center;background:#16a34a;color:#fff;text-decoration:none;padding:13px;border-radius:10px;font-weight:800}
+.empty{text-align:center;color:#6b7280;padding:25px}footer{text-align:center;padding:25px;color:#6b7280}
+</style>
+</head>
+<body>
+<header><div class="wrap top"><div class="logo">🛒 متجر ياسين</div><button class="cart" onclick="openCart()">🛍️ السلة (<span id="count">0</span>)</button></div></header>
+<section class="hero"><div class="wrap"><h1>مرحبًا بك في متجر ياسين</h1><p>إلكترونيات • ملابس • قطع غيار • منتجات متنوعة</p></div></section>
+<main class="wrap">
+<div class="controls"><input id="search" class="search" placeholder="🔎 ابحث عن منتج..." oninput="render()"><div id="cats" class="cats"></div></div>
+<div id="products" class="grid"></div>
+</main><footer>متجر ياسين © 2026</footer>
+
+<div id="modal" class="modal" onclick="if(event.target===this)closeCart()"><div class="box">
+<button class="close" onclick="closeCart()">✕</button><h2>سلة المشتريات</h2><div id="cartItems"></div>
+<div class="total">الإجمالي: <span id="total">0</span> جنيه سوداني</div>
+<input id="customer" class="field" placeholder="اسم العميل">
+<input id="phone" class="field" placeholder="رقم الهاتف">
+<textarea id="address" class="field" rows="3" placeholder="العنوان / ملاحظات الطلب"></textarea>
+<a id="wa" class="wa" href="#" target="_blank">📲 إرسال الطلب عبر واتساب</a>
+</div></div>
+
+<script>
+const WA="249917095221";
+const products=[
+{id:1,name:"سماعة بلوتوث",cat:"إلكترونيات",price:25000,icon:"🎧"},
+{id:2,name:"شاحن سريع",cat:"إلكترونيات",price:18000,icon:"🔌"},
+{id:3,name:"قميص رجالي",cat:"ملابس",price:30000,icon:"👕"},
+{id:4,name:"بنطال",cat:"ملابس",price:35000,icon:"👖"},
+{id:5,name:"قطعة غيار سيارة",cat:"قطع غيار",price:45000,icon:"⚙️"},
+{id:6,name:"فلتر زيت",cat:"قطع غيار",price:22000,icon:"🔧"},
+{id:7,name:"منتج منزلي",cat:"منتجات متنوعة",price:15000,icon:"📦"},
+{id:8,name:"ساعة رقمية",cat:"منتجات متنوعة",price:28000,icon:"⌚"}];
+let cart=JSON.parse(localStorage.getItem("cart")||"{}"), active="الكل";
+const money=n=>n.toLocaleString("ar-EG");
+function save(){localStorage.setItem("cart",JSON.stringify(cart));}
+function renderCats(){
+ let cs=["الكل",...new Set(products.map(p=>p.cat))];
+ document.getElementById("cats").innerHTML=cs.map(c=>`<button class="cat ${active===c?'active':''}" onclick="active='${c}';render()">${c}</button>`).join("");
+}
+function render(){
+ renderCats();let q=document.getElementById("search").value.trim().toLowerCase();
+ let list=products.filter(p=>(active==="الكل"||p.cat===active)&&p.name.toLowerCase().includes(q));
+ document.getElementById("products").innerHTML=list.map(p=>`<article class="card"><div class="pic">${p.icon}</div><div class="info"><div class="name">${p.name}</div><div>${p.cat}</div><div class="price">${money(p.price)} ج.س</div><button class="add" onclick="add(${p.id})">أضف إلى السلة</button></div></article>`).join("")||'<div class="empty">لا توجد منتجات.</div>';
+ updateCount();
+}
+function add(id){cart[id]=(cart[id]||0)+1;save();render();openCart();}
+function change(id,d){cart[id]=(cart[id]||0)+d;if(cart[id]<=0)delete cart[id];save();render();openCart();}
+function updateCount(){document.getElementById("count").textContent=Object.values(cart).reduce((a,b)=>a+b,0);}
+function openCart(){
+ document.getElementById("modal").classList.add("show");let html="",total=0;
+ for(let [id,q] of Object.entries(cart)){let p=products.find(x=>x.id==id);total+=p.price*q;html+=`<div class="row"><div><b>${p.name}</b><br>${money(p.price)} ج.س × ${q}</div><div class="qty"><button onclick="change(${id},-1)">−</button>${q}<button onclick="change(${id},1)">+</button></div></div>`}
+ document.getElementById("cartItems").innerHTML=html||'<div class="empty">السلة فارغة.</div>';document.getElementById("total").textContent=money(total);
+ updateWA(total);
+}
+function updateWA(total){
+ let lines=["السلام عليكم، أريد الطلب من متجر ياسين:",""];
+ for(let [id,q] of Object.entries(cart)){let p=products.find(x=>x.id==id);lines.push(`- ${p.name} × ${q} = ${money(p.price*q)} ج.س`)}
+ lines.push("",`الإجمالي: ${money(total)} ج.س`,`الاسم: ${document.getElementById("customer").value}`,`الهاتف: ${document.getElementById("phone").value}`,`العنوان/الملاحظات: ${document.getElementById("address").value}`);
+ document.getElementById("wa").href="https://wa.me/"+WA+"?text="+encodeURIComponent(lines.join("\n"));
+}
+["customer","phone","address"].forEach(id=>document.getElementById(id).addEventListener("input",()=>{let t=document.getElementById("total").textContent.replace(/,/g,"");updateWA(Number(t)||0)}));
+function closeCart(){document.getElementById("modal").classList.remove("show")}
+render();
+</script>
+</body></html>
